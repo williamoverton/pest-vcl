@@ -62,6 +62,8 @@ unset_exp = {"unset" ~ ident ~ ";"}
 
 synthetic_exp = {"synthetic" ~ "{" ~ "\"" ~ (multiline_string_character+)? ~ "\"" ~ "}" ~ ";"}
 
+pragma_exp = {"pragma" ~ ident ~ ident ~ value ~ ";"}
+
 indent = {"{" ~ (expression+)? ~ "}"}
 
 expression = {(error_exp | log_exp | declare_exp | set_exp | unset_exp | if_else_exp | if_exp | compare_exp | return_exp | restart_exp | synthetic_exp | indent)}
@@ -72,4 +74,6 @@ backend = {"backend" ~ ident ~ "{" ~ (backend_option+)? ~ "}"}
 
 sub = {"sub" ~ ident ~ "{" ~ (expression+)? ~ "}"}
 
-top_level_exp = { SOI ~ (sub | backend | COMMENT | WHITESPACE)+ ~ EOI }
+weird_top_level_keywords = {("C!" | "W!")}
+
+top_level_exp = { SOI ~ (sub | backend | pragma_exp | weird_top_level_keywords | COMMENT | WHITESPACE)+ ~ EOI }

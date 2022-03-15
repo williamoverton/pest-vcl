@@ -1,13 +1,13 @@
-# pragma optional_param geoip_opt_in true;
-# pragma optional_param max_object_size 20971520;
-# pragma optional_param smiss_max_object_size 20971520;
-# pragma optional_param fetchless_purge_all 1;
-# pragma optional_param allow_local_route_bypass true;
-# pragma optional_param default_ssl_check_cert 1;
-# pragma optional_param max_backends 20;
-# pragma optional_param customer_id "6i9bKCLdEVRuRjUJ5M85MI";
-# C!
-# W!
+pragma optional_param geoip_opt_in true;
+pragma optional_param max_object_size 20971520;
+pragma optional_param smiss_max_object_size 20971520;
+pragma optional_param fetchless_purge_all 1;
+pragma optional_param allow_local_route_bypass true;
+pragma optional_param default_ssl_check_cert 1;
+pragma optional_param max_backends 20;
+pragma optional_param customer_id "REDACTED";
+C!
+W!
 
 # Backends
 backend F_redirect_host {
