@@ -1,0 +1,75 @@
+WHITESPACE = _{(" " | NEWLINE)}
+COMMENT = _{"#" ~ (!NEWLINE ~ ANY)+}
+
+string_character = {
+    !("\"" | NEWLINE) 
+    ~ ANY
+}
+
+multiline_string_character = {
+    !("\"") 
+    ~ ANY
+}
+
+number = @{(ASCII_DIGIT+ | ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+)}
+ident = @{(ASCII_ALPHA | ".") ~ (ASCII_DIGIT | ASCII_ALPHA | "_" | "." | "-" | ":")+}
+litteral_string = @{"\"" ~ (string_character+)? ~ "\""}
+
+parameters = {(value ~ "," | value)+}
+func_call = {ident ~ "(" ~ (parameters) ~ ")"}
+
+inline_if_exp = { "if" ~ "(" ~ value ~ "," ~ value ~ "," ~ value ~ ")"}
+
+negated_value = @{"!" ~ value}
+
+enclosed_value = {"(" ~ (value) ~ ")"}
+
+rtime_type = {("ms" | "s" | "m" | "h" | "d" | "y")}
+rtime_value = @{ASCII_DIGIT+ ~ rtime_type}
+
+single_value = {(rtime_value | number | inline_if_exp | negated_value | func_call | ident | litteral_string | enclosed_value)}
+value = {(binary_logic_exp | compare_exp | calc_exp | single_value)}
+
+comp_operator = {("=="|"!="|">"|"<"|">="|"<="|"~")}
+calc_operator = {("+"|"-"|"*"|"/")}
+assign_operator = {("="|"+="|"-="|"*="|"/=")}
+binary_logic_operator = {("&&" | "||")}
+
+// Compare expression can not be compared against a Compare expression
+// e.g a == b == c is not allowed
+// Allow when enclosed though
+// e.g. (a == b) == c is ok!
+compare_exp = {single_value ~ comp_operator ~ single_value}
+calc_exp = {ident ~ calc_operator ~ value}
+
+binary_logic_exp = {((((enclosed_value | compare_exp | single_value) ~ binary_logic_operator)+ ~ (enclosed_value | compare_exp | single_value)) | (enclosed_value | compare_exp | single_value))}
+
+if_exp = {"if" ~ "(" ~ binary_logic_exp ~ ")" ~ "{" ~ expression+ ~ "}"}
+if_else_exp = {"if" ~ "(" ~ binary_logic_exp ~ ")" ~ "{" ~ (expression+)? ~ "}" ~ "else" ~ "{" ~ (expression+)? ~ "}"}
+return_exp = {"return" ~ "(" ~ ident ~ ")" ~ ";"}
+restart_exp = {"restart" ~ ";"}
+
+var_type = {("BOOL" | "INTEGER" | "STRING" | "FLOAT")}
+declare_exp = {"declare local" ~ ident ~ var_type ~ ";"}
+
+log_exp = {"log" ~ value ~ ";"}
+error_exp = {"error" ~ (number ~ value | number) ~ ";"}
+
+set_concat_value = {(value ~ " " | value)+}
+set_exp = {"set" ~ ident ~ assign_operator ~ set_concat_value ~ ";"}
+
+unset_exp = {"unset" ~ ident ~ ";"}
+
+synthetic_exp = {"synthetic" ~ "{" ~ "\"" ~ (multiline_string_character+)? ~ "\"" ~ "}" ~ ";"}
+
+indent = {"{" ~ (expression+)? ~ "}"}
+
+expression = {(error_exp | log_exp | declare_exp | set_exp | unset_exp | if_else_exp | if_exp | compare_exp | return_exp | restart_exp | synthetic_exp | indent)}
+
+backend_map_object = {"{" ~ backend_option+ ~ "}"}
+backend_option = {(ident ~ "=" ~ ((set_concat_value ~ ";") | backend_map_object))}
+backend = {"backend" ~ ident ~ "{" ~ (backend_option+)? ~ "}"}
+
+sub = {"sub" ~ ident ~ "{" ~ (expression+)? ~ "}"}
+
+top_level_exp = { SOI ~ (sub | backend | COMMENT | WHITESPACE)+ ~ EOI }
