@@ -27,8 +27,8 @@ enclosed_value = {"(" ~ (value) ~ ")"}
 rtime_type = {("ms" | "s" | "m" | "h" | "d" | "y")}
 rtime_value = @{ASCII_DIGIT+ ~ rtime_type}
 
-single_value = {(rtime_value | number | inline_if_exp | negated_value | func_call | ident | litteral_string | enclosed_value)}
-value = {(binary_logic_exp | compare_exp | calc_exp | single_value)}
+single_value = {(enclosed_value | calc_exp | rtime_value | number | inline_if_exp | negated_value | func_call | ident | litteral_string)}
+value = {(logic_exp | compare_exp | single_value)}
 
 comp_operator = {("=="|"!="|">"|"<"|">="|"<="|"~")}
 calc_operator = {("+"|"-"|"*"|"/")}
@@ -42,10 +42,18 @@ binary_logic_operator = {("&&" | "||")}
 compare_exp = {single_value ~ comp_operator ~ single_value}
 calc_exp = {ident ~ calc_operator ~ value}
 
-binary_logic_exp = {((((enclosed_value | compare_exp | single_value) ~ binary_logic_operator)+ ~ (enclosed_value | compare_exp | single_value)) | (enclosed_value | compare_exp | single_value))}
+logic_exp = {
+    (
+        (
+            ((enclosed_value | compare_exp | single_value) ~ binary_logic_operator)+ 
+            ~ (enclosed_value | compare_exp | single_value)
+        ) 
+        | (enclosed_value | compare_exp | single_value)
+    )
+}
 
-if_exp = {"if" ~ "(" ~ binary_logic_exp ~ ")" ~ "{" ~ expression+ ~ "}"}
-if_else_exp = {"if" ~ "(" ~ binary_logic_exp ~ ")" ~ "{" ~ (expression+)? ~ "}" ~ "else" ~ "{" ~ (expression+)? ~ "}"}
+if_exp = {"if" ~ "(" ~ logic_exp ~ ")" ~ "{" ~ expression+ ~ "}"}
+if_else_exp = {"if" ~ "(" ~ logic_exp ~ ")" ~ "{" ~ (expression+)? ~ "}" ~ "else" ~ "{" ~ (expression+)? ~ "}"}
 return_exp = {"return" ~ "(" ~ ident ~ ")" ~ ";"}
 restart_exp = {"restart" ~ ";"}
 
@@ -55,8 +63,7 @@ declare_exp = {"declare local" ~ ident ~ var_type ~ ";"}
 log_exp = {"log" ~ value ~ ";"}
 error_exp = {"error" ~ (number ~ value | number) ~ ";"}
 
-set_concat_value = {(value ~ " " | value)+}
-set_exp = {"set" ~ ident ~ assign_operator ~ set_concat_value ~ ";"}
+set_exp = {"set" ~ ident ~ assign_operator ~ value+ ~ ";"}
 
 unset_exp = {"unset" ~ ident ~ ";"}
 
@@ -69,7 +76,7 @@ indent = {"{" ~ (expression+)? ~ "}"}
 expression = {(error_exp | log_exp | declare_exp | set_exp | unset_exp | if_else_exp | if_exp | compare_exp | return_exp | restart_exp | synthetic_exp | indent)}
 
 backend_map_object = {"{" ~ backend_option+ ~ "}"}
-backend_option = {(ident ~ "=" ~ ((set_concat_value ~ ";") | backend_map_object))}
+backend_option = {(ident ~ "=" ~ ((value+ ~ ";") | backend_map_object))}
 backend = {"backend" ~ ident ~ "{" ~ (backend_option+)? ~ "}"}
 
 sub = {"sub" ~ ident ~ "{" ~ (expression+)? ~ "}"}

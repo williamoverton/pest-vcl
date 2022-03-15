@@ -380,6 +380,7 @@ sub vcl_hash {
     set req.hash += req.url;
     set req.hash += req.http.host;
     set req.hash += req.vcl.generation;
+    set beans = (cake + 2);
     return (hash);
   }
 #--FASTLY HASH END
