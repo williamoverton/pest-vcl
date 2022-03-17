@@ -83,4 +83,4 @@ sub = {"sub" ~ ident ~ "{" ~ (expression+)? ~ "}"}
 
 weird_top_level_keywords = {("C!" | "W!")}
 
-top_level_exp = { SOI ~ (sub | backend | pragma_exp | weird_top_level_keywords | COMMENT | WHITESPACE)+ ~ EOI }
+top_level_exp = _{ SOI ~ (sub | backend | pragma_exp | weird_top_level_keywords | COMMENT | WHITESPACE)+ ~ EOI }

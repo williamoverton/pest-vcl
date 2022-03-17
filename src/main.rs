@@ -17,10 +17,11 @@ fn main() {
     // println!("{}", input);
 
     let pairs = VCLParser::parse(Rule::top_level_exp, input).unwrap_or_else(|e| panic!("{}", e));
-    
+
     let mut items: Vec<Value> = Vec::new();
 
-    for pair in pairs {
+    for pair in pairs.into_iter() {
+        println!("Parsing root element");
         items.push(parse_pair(pair));
         // A pair is a combination of the rule which matched and a span of input
         
@@ -70,22 +71,6 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
 
             return Value::Object(map);
         }
-        Rule:: top_level_exp => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
-        }
-        Rule:: expression => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
-        }
-        Rule:: value => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
-        }
-        Rule:: single_value => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
-        }
         Rule::set_exp => {
             let mut map: Map<String, Value> = Map::new();
 
@@ -102,6 +87,30 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
         Rule::assign_operator => {
             return Value::String(pair.as_str().to_string());
         }
+
+        // Remove groupings
+        Rule:: top_level_exp => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: expression => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: value => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: single_value => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: logic_exp => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+
+        // Print and skip
         _ => {
             println!("{:?}", rule);
             return parse_pairs(pair.into_inner());
