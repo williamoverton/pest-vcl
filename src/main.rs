@@ -2,8 +2,11 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use serde_json::{Map, Value};
+
 use pest::Parser;
 use pest::iterators::Pair;
+use pest::iterators::Pairs;
 
 #[derive(Parser)]
 #[grammar = "vcl.pest"]
@@ -15,60 +18,103 @@ fn main() {
 
     let pairs = VCLParser::parse(Rule::top_level_exp, input).unwrap_or_else(|e| panic!("{}", e));
     
+    let mut items: Vec<Value> = Vec::new();
+
     for pair in pairs {
-        print_pair(pair, 0);
+        items.push(parse_pair(pair));
         // A pair is a combination of the rule which matched and a span of input
         
     }
+
+    println!("{}", serde_json::to_string_pretty(&items).unwrap());
 }
 
-fn print_pair(pair: Pair<Rule>, depth: u64){
-    let padding = (0..depth).map(|_| " ").collect::<String>();
+fn parse_pair(pair: Pair<Rule>) -> Value {
     
     // println!("Span:    {:?}", pair.as_span());
 
     let rule = pair.as_rule();
     match rule {
+        Rule::sub => {
+            let mut map: Map<String, Value> = Map::new();
+            let mut children = pair.into_inner();
+            let name = children.next().unwrap().as_str();
+
+            map.insert("type".to_string(), Value::String("sub".to_string()));
+            map.insert("name".to_string(), Value::String(name.to_string()));
+            map.insert("statements".to_string(), parse_pairs(children.into_iter()));
+
+            return Value::Object(map);
+        }
         Rule::ident => {
-            println!("{}Ident({})", padding, pair.as_str());
+            let mut map: Map<String, Value> = Map::new();
+
+            map.insert("type".to_string(), Value::String("ident".to_string()));
+            map.insert("value".to_string(), Value::String(pair.as_str().to_string()));
+
+            return Value::Object(map);
         }
         Rule::litteral_string => {
-            println!("{}String({})", padding, pair.as_str());
+            let mut map: Map<String, Value> = Map::new();
+
+            map.insert("type".to_string(), Value::String("string".to_string()));
+            map.insert("value".to_string(), Value::String(pair.as_str().to_string()));
+
+            return Value::Object(map);
         }
         Rule::number => {
-            println!("{}Number({})", padding, pair.as_str());
+            let mut map: Map<String, Value> = Map::new();
+
+            map.insert("type".to_string(), Value::String("number".to_string()));
+            map.insert("value".to_string(), Value::String(pair.as_str().to_string()));
+
+            return Value::Object(map);
         }
-        Rule::comp_operator => {
-            println!("{}CompOperator({})", padding, pair.as_str());
+        Rule:: top_level_exp => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
         }
-        Rule::calc_operator => {
-            println!("{}CalcOperator({})", padding, pair.as_str());
+        Rule:: expression => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: value => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule:: single_value => {
+            let child = pair.into_inner().next().unwrap();
+            return parse_pair(child);
+        }
+        Rule::set_exp => {
+            let mut map: Map<String, Value> = Map::new();
+
+            let mut children = pair.into_inner();
+
+            map.insert("type".to_string(), Value::String("set_exp".to_string()));
+
+            map.insert("assignee".to_string(), Value::String(children.next().unwrap().as_str().to_string()));
+            map.insert("assign_operator".to_string(), parse_pair(children.next().unwrap()));
+            map.insert("value".to_string(), parse_pair(children.next().unwrap()));
+
+            return Value::Object(map);
         }
         Rule::assign_operator => {
-            println!("{}AssignOperator({})", padding, pair.as_str());
+            return Value::String(pair.as_str().to_string());
         }
-        // Rule::set_exp => {
-            
-        //     let mut pairs = pair.into_inner();
-        //     let ident = pairs.next().unwrap().as_str();
-        //     let operator = pairs.next().unwrap().as_str();
-        //     let value = pairs.next().unwrap().as_str();
-        //     println!("{}SetExpression({} {} {})", padding, ident, operator, value);
-        //     // for inner_pair in pair.into_inner() {
-        //     //     println!("{} = {}", 
-        //     //         inner_pair.as_rule().to_string(),
-        //     //         inner_pair.as_str(),
-        //     //     );
-        //     //     print_pair(inner_pair, depth + 2);
-        //     // }
-        // }
         _ => {
-            println!("{}{:?}", padding, rule);
-            for inner_pair in pair.into_inner() {
-                print_pair(inner_pair, depth + 1);
-            }
+            println!("{:?}", rule);
+            return parse_pairs(pair.into_inner());
         }
     }
+}
 
-    
+fn parse_pairs(pairs: Pairs<Rule>) -> Value {
+    let mut items: Vec<Value> = Vec::new();
+
+    for pair in pairs {
+        items.push(parse_pair(pair));
+    }
+
+    Value::Array(items)
 }
