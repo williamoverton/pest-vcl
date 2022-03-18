@@ -20,7 +20,7 @@ backend F_redirect_host {
     .host_header = "example.edgecompute.app";
     .max_connections = 200;
     .port = "443";
-    .share_key = "1X3FeswgYyJqaqY6umjteZ";
+    .share_key = "1234567890";
     .ssl = true;
     .ssl_cert_hostname = "example.edgecompute.app";
     .ssl_check_cert = always;
@@ -44,7 +44,7 @@ backend F_main {
     .host = "www.example.com";
     .max_connections = 200;
     .port = "443";
-    .share_key = "1X3FeswgYyJqaqY6umjteZ";
+    .share_key = "1234567890";
     .ssl = true;
     .ssl_check_cert = never;
     .ssl_sni_hostname = "example.com";
