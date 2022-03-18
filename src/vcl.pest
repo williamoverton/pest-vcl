@@ -18,7 +18,8 @@ litteral_string = @{"\"" ~ (string_character+)? ~ "\""}
 parameters = {(value ~ "," | value)+}
 func_call = {ident ~ "(" ~ (parameters) ~ ")"}
 
-inline_if_exp = { "if" ~ "(" ~ value ~ "," ~ value ~ "," ~ value ~ ")"}
+comma = {","}
+inline_if_exp = { "if" ~ "(" ~ logic_exp ~ comma ~ value+ ~ comma ~ value+ ~ ")"}
 
 negated_value = @{"!" ~ value}
 

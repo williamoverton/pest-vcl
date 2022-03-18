@@ -40,7 +40,7 @@ fn main() {
         
     }
 
-    // println!("{}", serde_json::to_string_pretty(&items).unwrap());
+    println!("{}", serde_json::to_string_pretty(&items).unwrap());
 }
 
 fn parse_pair(pair: Pair<Rule>) -> Value {
@@ -56,7 +56,12 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
 
             map.insert("type".to_string(), Value::String("sub".to_string()));
             map.insert("name".to_string(), Value::String(name.to_string()));
-            map.insert("statements".to_string(), parse_pairs(children.into_iter()));
+            
+            if let Some(statements) = children.into_iter().next(){
+                map.insert("statements".to_string(), parse_pair(statements));
+            }else{
+                map.insert("statements".to_string(), Value::Array(Vec::new()));
+            }
 
             return Value::Object(map);
         }
@@ -163,15 +168,31 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
             return parse_pair(child);
         }
         Rule::expressions => {
+            let child_count = pair.clone().into_inner().count();
+
+            if child_count == 1 {
+                return parse_pair(pair.into_inner().next().unwrap());
+            }
+
             return parse_pairs(pair.into_inner());
         }
         Rule::value => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
+            let child_count = pair.clone().into_inner().count();
+
+            if child_count == 1 {
+                return parse_pair(pair.into_inner().next().unwrap());
+            }
+
+            return parse_pairs(pair.into_inner());
         }
         Rule::single_value => {
-            let child = pair.into_inner().next().unwrap();
-            return parse_pair(child);
+            let child_count = pair.clone().into_inner().count();
+
+            if child_count == 1 {
+                return parse_pair(pair.into_inner().next().unwrap());
+            }
+
+            return parse_pairs(pair.into_inner());
         }
         Rule::negated_value => {
             let mut map: Map<String, Value> = Map::new();
@@ -189,9 +210,21 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
             return parse_pairs(pair.into_inner());
         }
         Rule::enclosed_value => {
+            let child_count = pair.clone().into_inner().count();
+
+            if child_count == 1 {
+                return parse_pair(pair.into_inner().next().unwrap());
+            }
+
             return parse_pairs(pair.into_inner());
         }
         Rule::indent => {
+            let child_count = pair.clone().into_inner().count();
+
+            if child_count == 1 {
+                return parse_pair(pair.into_inner().next().unwrap());
+            }
+
             return parse_pairs(pair.into_inner());
         }
         Rule::rtime_type => {
@@ -318,7 +351,7 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
         Rule::synthetic_exp => {
             let mut map: Map<String, Value> = Map::new();
 
-            let mut children = pair.into_inner();
+            let children = pair.into_inner();
 
             map.insert("type".to_string(), Value::String("synthetic_exp".to_string()));
 
@@ -332,9 +365,68 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
 
             return Value::Object(map);
         }
+        Rule::func_call => {
+            let mut map: Map<String, Value> = Map::new();
+
+            let mut children = pair.into_inner();
+
+            map.insert("type".to_string(), Value::String("func_call".to_string()));
+
+            map.insert("name".to_string(), Value::String(children.next().unwrap().as_str().to_string()));
+            map.insert("args".to_string(), parse_pairs(children.next().unwrap().into_inner()));
+
+            return Value::Object(map);
+        }
+        Rule::inline_if_exp => {
+            let mut map: Map<String, Value> = Map::new();
+
+            let mut children = pair.into_inner();
+
+            map.insert("type".to_string(), Value::String("inline_if_exp".to_string()));
+
+            map.insert("logic_exp".to_string(), Value::String(children.next().unwrap().as_str().to_string()));
+            
+            let _ = children.next(); // Take comma
+
+            let mut first_args: Vec<Value> = Vec::default();
+            
+            while let Some(child) = children.next() {
+                match child.as_rule() {
+                    Rule::comma => {
+                        break;
+                    }
+                    _ => {
+                        first_args.push(parse_pair(child));
+                    }
+                }
+            }
+
+            let second_args = parse_pairs(children);
+
+            map.insert("first_args".to_string(), Value::Array(first_args));
+            map.insert("second_args".to_string(), second_args);
+
+            return Value::Object(map);
+        }
+        Rule::calc_operator => {
+            return Value::String(pair.as_str().to_string());
+        }
+        Rule::calc_exp => {
+            let mut map: Map<String, Value> = Map::new();
+
+            let mut children = pair.into_inner();
+
+            map.insert("type".to_string(), Value::String("calc_exp".to_string()));
+
+            map.insert("value_one".to_string(), parse_pair(children.next().unwrap()));
+            map.insert("comp_operator".to_string(), parse_pair(children.next().unwrap()));
+            map.insert("value_two".to_string(), parse_pair(children.next().unwrap()));
+
+            return Value::Object(map);
+        }
         // Print and skip
         _ => {
-            println!("{:?}", rule);
+            eprintln!("Didn't handle type: {:?}", rule);
             return parse_pairs(pair.into_inner());
         }
     }
