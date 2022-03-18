@@ -2,21 +2,35 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+
 use serde_json::{Map, Value};
 
 use pest::Parser;
 use pest::iterators::Pair;
 use pest::iterators::Pairs;
 
+use std::fs;
+
 #[derive(Parser)]
 #[grammar = "vcl.pest"]
 pub struct VCLParser;
 
+use clap::Parser as ClapParser;
+#[derive(ClapParser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Name of the person to greet
+    #[clap(short, long)]
+    file: String,
+}
+
 fn main() {
-    let input = include_str!("input.vcl");
+    let args = Args::parse();
+
+    let input = fs::read_to_string(args.file).expect("Something went wrong reading the file");
     // println!("{}", input);
 
-    let pairs = VCLParser::parse(Rule::top_level_exp, input).unwrap_or_else(|e| panic!("{}", e));
+    let pairs = VCLParser::parse(Rule::top_level_exp, &input).unwrap_or_else(|e| panic!("{}", e));
 
     let mut items: Vec<Value> = Vec::new();
 
