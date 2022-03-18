@@ -57,11 +57,7 @@ fn parse_pair(pair: Pair<Rule>) -> Value {
             map.insert("type".to_string(), Value::String("sub".to_string()));
             map.insert("name".to_string(), Value::String(name.to_string()));
             
-            if let Some(statements) = children.into_iter().next(){
-                map.insert("statements".to_string(), parse_pair(statements));
-            }else{
-                map.insert("statements".to_string(), Value::Array(Vec::new()));
-            }
+            map.insert("statements".to_string(), parse_pairs(children));
 
             return Value::Object(map);
         }
