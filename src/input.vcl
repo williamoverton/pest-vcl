@@ -57,6 +57,8 @@ backend F_main {
         .window = 5;
       }
 }
+
+
 sub vcl_recv {
 #--FASTLY RECV BEGIN
   if (req.restarts == 0) {
@@ -98,6 +100,9 @@ if (req.restarts == 0) {
     }
     return(lookup);
 }
+
+
+
 sub vcl_fetch {
 #--FASTLY FETCH BEGIN
 # record which cache ran vcl_fetch for this object and when

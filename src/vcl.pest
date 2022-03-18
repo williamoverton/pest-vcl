@@ -25,7 +25,7 @@ negated_value = @{"!" ~ value}
 enclosed_value = {"(" ~ (value) ~ ")"}
 
 rtime_type = {("ms" | "s" | "m" | "h" | "d" | "y")}
-rtime_value = @{ASCII_DIGIT+ ~ rtime_type}
+rtime_value = ${number ~ rtime_type}
 
 single_value = {(enclosed_value | calc_exp | rtime_value | number | inline_if_exp | negated_value | func_call | ident | litteral_string)}
 value = {(logic_exp | compare_exp | single_value)}
@@ -53,7 +53,8 @@ logic_exp = {
 }
 
 if_exp = {"if" ~ "(" ~ logic_exp ~ ")" ~ "{" ~ expression+ ~ "}"}
-if_else_exp = {"if" ~ "(" ~ logic_exp ~ ")" ~ "{" ~ (expression+)? ~ "}" ~ "else" ~ "{" ~ (expression+)? ~ "}"}
+if_else_seperator = {"else"}
+if_else_exp = {"if" ~ "(" ~ logic_exp ~ ")" ~ "{" ~ expressions? ~ "}" ~ if_else_seperator ~ "{" ~ expressions? ~ "}"}
 return_exp = {"return" ~ "(" ~ ident ~ ")" ~ ";"}
 restart_exp = {"restart" ~ ";"}
 
@@ -67,20 +68,21 @@ set_exp = {"set" ~ ident ~ assign_operator ~ value+ ~ ";"}
 
 unset_exp = {"unset" ~ ident ~ ";"}
 
-synthetic_exp = {"synthetic" ~ "{" ~ "\"" ~ (multiline_string_character+)? ~ "\"" ~ "}" ~ ";"}
+synthetic_exp = ${"synthetic" ~ WHITESPACE? ~ "{" ~ WHITESPACE? ~ "\"" ~ (multiline_string_character+)? ~ "\"" ~ WHITESPACE? ~ "}" ~ WHITESPACE? ~ ";"}
 
 pragma_exp = {"pragma" ~ ident ~ ident ~ value ~ ";"}
 
-indent = {"{" ~ (expression+)? ~ "}"}
+indent = {"{" ~ expressions? ~ "}"}
 
 expression = {(error_exp | log_exp | declare_exp | set_exp | unset_exp | if_else_exp | if_exp | compare_exp | return_exp | restart_exp | synthetic_exp | indent)}
+expressions = {(expression+)}
 
 backend_map_object = {"{" ~ backend_option+ ~ "}"}
 backend_option = {(ident ~ "=" ~ ((value+ ~ ";") | backend_map_object))}
 backend = {"backend" ~ ident ~ "{" ~ (backend_option+)? ~ "}"}
 
-sub = {"sub" ~ ident ~ "{" ~ (expression+)? ~ "}"}
+sub = {"sub" ~ ident ~ "{" ~ (expressions+)? ~ "}"}
 
 weird_top_level_keywords = {("C!" | "W!")}
 
-top_level_exp = _{ SOI ~ (sub | backend | pragma_exp | weird_top_level_keywords | COMMENT | WHITESPACE)+ ~ EOI }
+top_level_exp = _{ (sub | backend | pragma_exp | weird_top_level_keywords | COMMENT | WHITESPACE)+}
